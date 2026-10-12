@@ -1,4 +1,4 @@
-"""Render data/casinos.json into a static, JavaScript-free index.html.
+"""Render data/casinos.json into a static, JavaScript-free Bootstrap 5 page.
 
 Run on its own to rebuild the page from the existing JSON:  python render.py
 (scrape.py also calls render() after every successful scrape.)
@@ -15,42 +15,14 @@ DATA = HERE / "data" / "casinos.json"
 PAGE = HERE / "public" / "index.html"
 SAST = ZoneInfo("Africa/Johannesburg")
 
-CSS = """
-  :root { --bg:#fff; --fg:#000; --muted:#6e6e73; --line:#d2d2d7; --card:#fff; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#000; --fg:#fff; --muted:#86868b; --line:#38383a; --card:#000; }
-  }
-  * { box-sizing:border-box; }
-  body { margin:0; padding:48px 20px 64px; background:var(--bg); color:var(--fg);
-         font:17px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
-         -webkit-font-smoothing:antialiased; }
-  main { max-width:980px; margin:0 auto; }
-  h1 { font-size:clamp(2rem, 6vw, 3.5rem); line-height:1.07; font-weight:700; letter-spacing:-.03em; margin:0 0 8px; }
-  .updated { color:var(--muted); font-size:.875rem; margin:0 0 40px; }
-  table { width:100%; border-collapse:collapse; }
-  th { text-align:left; font-size:.75rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
-       color:var(--muted); padding:0 12px 12px 0; border-bottom:1px solid var(--fg); }
-  td { padding:20px 12px 20px 0; border-bottom:1px solid var(--line); vertical-align:top; }
-  td:first-child { font-weight:600; }
-  .na { color:var(--muted); }
-  a { color:var(--fg); text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--line); }
-  a:hover { text-decoration-color:var(--fg); }
-
-  /* Phones: each row becomes a rounded card with labelled lines */
-  @media (max-width: 640px) {
-    body { padding:32px 16px 48px; }
-    thead { display:none; }
-    tr { display:block; border:1px solid var(--line); border-radius:18px; padding:6px 16px; margin-bottom:14px; background:var(--card); }
-    td { display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--line); text-align:right; }
-    td:last-child { border-bottom:0; }
-    td:first-child { font-size:1.15rem; }
-    td::before { content:attr(data-label); color:var(--muted); font-size:.8rem; font-weight:400; text-align:left; flex:none; }
-  }
-"""
+BOOTSTRAP = (
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" '
+    'integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">'
+)
 
 COLUMNS = ["Casino", "Welcome bonus", "Wagering", "Min. deposit", "Source"]
 
-NA = '<span class="na">n/a</span>'
+NA = '<span class="text-body-secondary">n/a</span>'
 
 
 def write_atomic(path: Path, text: str) -> None:
@@ -66,19 +38,36 @@ def _text(value) -> str:
     return escape(str(value).strip()) if value is not None and str(value).strip() else NA
 
 
-def _row(c: dict) -> str:
+def _fields(c: dict) -> list[str]:
+    """The five display values for one casino, in COLUMNS order (HTML-safe)."""
     wagering, url = c.get("wagering_multiplier"), c.get("source_url") or ""
     link = NA
     if url.startswith(("http://", "https://")):
-        link = f'<a href="{escape(url, quote=True)}" rel="noopener noreferrer" target="_blank">{escape(urlsplit(url).hostname or url)}</a>'
-    cells = [
+        link = f'<a class="link-body-emphasis" href="{escape(url, quote=True)}" rel="noopener noreferrer" target="_blank">{escape((urlsplit(url).hostname or url).removeprefix("www."))}</a>'
+    return [
         _text(c.get("name")),
         _text(c.get("welcome_bonus")),
         NA if wagering is None else f"{wagering:g}x",
         _text(c.get("min_deposit")),
         link,
     ]
-    return "<tr>" + "".join(f'<td data-label="{label}">{v}</td>' for label, v in zip(COLUMNS, cells)) + "</tr>"
+
+
+def _row(c: dict) -> str:  # tablet and up
+    return "<tr>" + "".join(f"<td>{v}</td>" for v in _fields(c)) + "</tr>"
+
+
+def _card(c: dict) -> str:  # phones (default)
+    name, *rest = _fields(c)
+    items = "".join(
+        f'<li class="list-group-item d-flex justify-content-between gap-3">'
+        f'<span class="text-body-secondary text-nowrap">{label}</span><span class="text-end">{v}</span></li>'
+        for label, v in zip(COLUMNS[1:], rest)
+    )
+    return (
+        f'<div class="card mb-3"><div class="card-header fw-semibold">{name}</div>'
+        f'<ul class="list-group list-group-flush">{items}</ul></div>'
+    )
 
 
 def render() -> None:
@@ -88,27 +77,33 @@ def render() -> None:
     else:  # default page before the first scrape: three empty rows
         data = {"casinos": [{}] * 3}
         updated = "No data yet. Run python scrape.py"
-    head = "".join(f"<th>{h}</th>" for h in COLUMNS)
-    rows = "\n    ".join(_row(c) for c in data["casinos"])
+    head = "".join(f'<th scope="col">{h}</th>' for h in COLUMNS)
+    rows = "\n        ".join(_row(c) for c in data["casinos"])
+    cards = "\n  ".join(_card(c) for c in data["casinos"])
     html = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Casino Welcome Bonuses</title>
-<style>{CSS}</style>
+{BOOTSTRAP}
 </head>
 <body>
-<main>
 <!-- Generated by render.py from data/casinos.json - do not edit by hand. -->
-<h1>Casino Welcome Bonuses</h1>
-<p class="updated">{updated}</p>
-<table>
-  <thead><tr>{head}</tr></thead>
-  <tbody>
-    {rows}
-  </tbody>
-</table>
+<main class="container py-4 py-md-5">
+  <h1 class="fs-2 fw-bold">Casino Welcome Bonuses</h1>
+  <p class="text-body-secondary mb-4">{updated}</p>
+  <div class="d-md-none">
+  {cards}
+  </div>
+  <div class="d-none d-md-block table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-dark"><tr>{head}</tr></thead>
+      <tbody>
+        {rows}
+      </tbody>
+    </table>
+  </div>
 </main>
 </body>
 </html>

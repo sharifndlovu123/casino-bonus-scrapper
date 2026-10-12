@@ -2,7 +2,7 @@
 
 A small scraper that pulls 3 casino welcome bonuses from a public comparison
 site, uses Claude Opus to turn the free-text terms into structured fields,
-saves them to JSON, and builds a simple black-and-white web page from that JSON.
+saves them to JSON, and builds a simple Bootstrap 5 web page from that JSON.
 
 **Live on Cloudflare:** https://casino.devbridge.co.za (also
 https://casino-bonus-scrapper.sharifndlovu.workers.dev). See [Live site](#live-site).
