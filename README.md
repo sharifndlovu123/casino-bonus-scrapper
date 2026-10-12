@@ -4,6 +4,9 @@ A small scraper that pulls 3 casino welcome bonuses from a public comparison
 site, uses Claude Opus to turn the free-text terms into structured fields,
 saves them to JSON, and builds a simple black-and-white web page from that JSON.
 
+**Live on Cloudflare:** https://casino.devbridge.co.za (also
+https://casino-bonus-scrapper.sharifndlovu.workers.dev). See [Live site](#live-site).
+
 ## What it collects
 
 For each of 3 casinos:
@@ -18,6 +21,22 @@ For each of 3 casinos:
 Times on the page are shown in SAST (South Africa Standard Time); `data/casinos.json` stores UTC.
 Anything missing is stored as `null` and shown as "n/a" on the page. Before the
 first scrape the page shows three rows of "n/a".
+
+## Live site
+
+The page is hosted on Cloudflare (Workers static assets) at:
+
+- https://casino.devbridge.co.za
+- https://casino-bonus-scrapper.sharifndlovu.workers.dev
+
+Deploying publishes the contents of `public/` only:
+
+```bash
+npx wrangler deploy
+```
+
+Note: the nightly cron job refreshes the files on this machine. The live site
+only shows new data after the next `npx wrangler deploy`.
 
 ## Setup
 
