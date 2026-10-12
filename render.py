@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 HERE = Path(__file__).parent
 DATA = HERE / "data" / "casinos.json"
-PAGE = HERE / "index.html"
+PAGE = HERE / "public" / "index.html"
 SAST = ZoneInfo("Africa/Johannesburg")
 
 CSS = """
@@ -55,6 +55,7 @@ NA = '<span class="na">n/a</span>'
 
 def write_atomic(path: Path, text: str) -> None:
     """Write via a temp file so a failed run never leaves a half-written file."""
+    path.parent.mkdir(exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(text, encoding="utf-8")
     tmp.replace(path)
@@ -113,7 +114,7 @@ def render() -> None:
 </html>
 """
     write_atomic(PAGE, html)
-    print(f"Rendered {PAGE.name}")
+    print(f"Rendered {PAGE.relative_to(HERE)}")
 
 
 if __name__ == "__main__":

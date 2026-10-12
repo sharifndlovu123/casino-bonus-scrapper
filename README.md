@@ -42,8 +42,16 @@ One command updates the data and the page:
 .venv/bin/python scrape.py
 ```
 
-Then open `index.html` in a browser. The page is plain HTML with no JavaScript,
-so you can just double-click it. No server is needed.
+Then view the page. It is plain HTML with no JavaScript (`public/index.html`), so you
+can open it directly, or serve it locally with Wrangler (Cloudflare's dev server,
+needs Node):
+
+```bash
+npx wrangler dev          # http://localhost:8787
+```
+
+Wrangler serves only the `public/` folder (see `wrangler.jsonc`), so `.env` and the
+source files are never exposed.
 
 To rebuild the page from the existing JSON without scraping or calling the API:
 
@@ -55,7 +63,7 @@ To rebuild the page from the existing JSON without scraping or calling the API:
 
 **The data refreshes automatically every night at 02:00 SAST (the machine's local time).** A cron
 job runs `scrape.py`, which re-scrapes the source, re-runs the Opus extraction,
-rewrites `data/casinos.json` and rebuilds `index.html`. Reload the page in the
+rewrites `data/casinos.json` and rebuilds `public/index.html`. Reload the page in the
 morning to see the new data. The "Last updated" line shows when it last ran.
 
 A static page can't run Python by itself, and there is no server, so the
@@ -97,7 +105,7 @@ emails you when something is wrong:
 ## How it works
 
 ```
-scrape.py  ->  fetch + parse  ->  Claude Opus  ->  data/casinos.json  ->  render.py  ->  index.html
+scrape.py  ->  fetch + parse  ->  Claude Opus  ->  data/casinos.json  ->  render.py  ->  public/index.html
 ```
 
 1. **Fetch:** `scrape.py` reads the comparison table on `casino.org/bonuses/`
@@ -108,7 +116,7 @@ scrape.py  ->  fetch + parse  ->  Claude Opus  ->  data/casinos.json  ->  render
 3. **Save:** the result is written to `data/casinos.json`. The file is written
    to a temp file first and then swapped in, so a failed run never leaves a
    half-written file.
-4. **Render:** `render.py` turns the JSON into a static `index.html`.
+4. **Render:** `render.py` turns the JSON into a static `public/index.html`.
 
 ## Scraping rules
 
@@ -128,9 +136,10 @@ scrape.py  ->  fetch + parse  ->  Claude Opus  ->  data/casinos.json  ->  render
 | `scrape.py` | Entry point: scrape, extract with Opus, write JSON, render page |
 | `schedule.py` | Installs/removes the nightly cron job |
 | `healthcheck.py` | Sends success/failure pings to healthchecks.io |
-| `render.py` | Builds `index.html` from `data/casinos.json` |
+| `render.py` | Builds `public/index.html` from `data/casinos.json` |
+| `wrangler.jsonc` | Wrangler config: serves `public/` locally |
 | `data/casinos.json` | Latest scraped data |
-| `index.html` | Generated page. Don't edit by hand, it is overwritten on each run |
+| `public/index.html` | Generated page. Don't edit by hand, it is overwritten on each run |
 | `requirements.txt` | Python dependencies |
 | `.env` | Your API key (not committed) |
 
