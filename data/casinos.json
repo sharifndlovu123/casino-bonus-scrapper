@@ -1,0 +1,26 @@
+{
+  "updated_at": "2026-10-12T11:08:39+00:00",
+  "casinos": [
+    {
+      "name": "RetroBet",
+      "welcome_bonus": "Up to $22,500 + 500 FS",
+      "wagering_multiplier": 40,
+      "min_deposit": "$30",
+      "source_url": "https://www.casino.org/bonuses/"
+    },
+    {
+      "name": "WishKing",
+      "welcome_bonus": "250% up to $9,000 + 250 FS",
+      "wagering_multiplier": 40,
+      "min_deposit": "$20",
+      "source_url": "https://www.casino.org/bonuses/"
+    },
+    {
+      "name": "Boho Casino",
+      "welcome_bonus": "100% up to $777 + 100 FS",
+      "wagering_multiplier": 40,
+      "min_deposit": "$30",
+      "source_url": "https://www.casino.org/bonuses/"
+    }
+  ]
+}
